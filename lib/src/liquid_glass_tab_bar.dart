@@ -9,15 +9,15 @@ import 'shares/liquid_glass_icon.dart';
 import 'utils/liquid_glass_route_suppression.dart';
 import 'utils/native_liquid_glass_utils.dart';
 
-/// Tap gesture claim for the native tab bar's `UiKitView`.
+/// Eager gesture claim for the native tab bar's `UiKitView`.
 ///
 /// Tab-item selection and action-button taps go through the native
-/// `UITabBarController`; declaring the recognizer up-front keeps
-/// Flutter's lazy forwarding from delaying or cancelling those
-/// touches.
+/// `UITabBarController`. Claiming the sequence immediately keeps ancestor
+/// Flutter gesture detectors and scrollables from cancelling UIKit's native
+/// press, selection, and refraction animations.
 final Set<Factory<OneSequenceGestureRecognizer>> _tabBarGestureRecognizers =
     <Factory<OneSequenceGestureRecognizer>>{
-  Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
+  Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
 };
 
 /// Extra height added above the native platform view frame so the iOS liquid
