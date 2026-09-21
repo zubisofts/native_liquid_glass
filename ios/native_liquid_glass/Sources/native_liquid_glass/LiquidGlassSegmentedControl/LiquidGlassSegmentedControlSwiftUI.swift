@@ -8,6 +8,7 @@ class LiquidGlassSegmentedControlViewModel: ObservableObject {
   @Published var labels: [String] = []
   @Published var enabled: Bool = true
   @Published var tintColor: Color? = nil
+  @Published var colorScheme: ColorScheme? = nil
 
   var onChanged: ((Int) -> Void)?
 }
@@ -26,6 +27,7 @@ struct LiquidGlassSegmentedControlSwiftUIView: View {
     }
     .pickerStyle(.segmented)
     .tint(viewModel.tintColor)
+    .preferredColorScheme(viewModel.colorScheme)
     .disabled(!viewModel.enabled)
     .padding(.horizontal, 16)
   }

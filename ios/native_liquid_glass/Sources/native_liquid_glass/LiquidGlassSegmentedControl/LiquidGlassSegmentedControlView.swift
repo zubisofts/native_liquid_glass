@@ -55,6 +55,23 @@ final class LiquidGlassSegmentedControlPlatformView: NSObject, FlutterPlatformVi
     return UIColor(red: red, green: green, blue: blue, alpha: alpha)
   }
 
+  private static func decodeInterfaceStyle(from value: Any?) -> UIUserInterfaceStyle {
+    switch value as? String {
+    case "light": return .light
+    case "dark": return .dark
+    default: return .unspecified
+    }
+  }
+
+  @available(iOS 26.0, *)
+  private static func decodeColorScheme(from value: Any?) -> ColorScheme? {
+    switch value as? String {
+    case "light": return .light
+    case "dark": return .dark
+    default: return nil
+    }
+  }
+
   // MARK: - SwiftUI path (iOS 26+)
 
   @available(iOS 26.0, *)
@@ -64,6 +81,7 @@ final class LiquidGlassSegmentedControlPlatformView: NSObject, FlutterPlatformVi
     vm.selection = (args?["selectedIndex"] as? NSNumber)?.intValue ?? 0
     vm.enabled = (args?["enabled"] as? Bool) ?? true
     vm.tintColor = Self.decodeColor(from: args?["color"]).map { Color(uiColor: $0) }
+    vm.colorScheme = Self.decodeColorScheme(from: args?["brightness"])
 
     vm.onChanged = { [weak self] newIndex in
       self?.methodChannel.invokeMethod("valueChanged", arguments: newIndex)
@@ -114,6 +132,8 @@ final class LiquidGlassSegmentedControlPlatformView: NSObject, FlutterPlatformVi
       sc.selectedSegmentIndex = selectedIndex
     }
     sc.isEnabled = (args?["enabled"] as? Bool) ?? true
+    containerView.overrideUserInterfaceStyle = Self.decodeInterfaceStyle(
+      from: args?["brightness"])
     if let color = Self.decodeColor(from: args?["color"]) {
       sc.selectedSegmentTintColor = color
     }
@@ -220,6 +240,17 @@ final class LiquidGlassSegmentedControlPlatformView: NSObject, FlutterPlatformVi
           } else {
             self.segmentedControl?.selectedSegmentTintColor = color
           }
+        }
+        result(nil)
+
+      case "setBrightness":
+        let brightness = (call.arguments as? [String: Any])?["brightness"]
+        let style = Self.decodeInterfaceStyle(from: brightness)
+        self.containerView.overrideUserInterfaceStyle = style
+        if #available(iOS 26.0, *),
+          let vm = self.viewModel as? LiquidGlassSegmentedControlViewModel
+        {
+          vm.colorScheme = Self.decodeColorScheme(from: brightness)
         }
         result(nil)
 

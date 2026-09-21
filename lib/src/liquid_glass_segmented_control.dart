@@ -27,6 +27,9 @@ class LiquidGlassSegmentedControl extends StatefulWidget {
   /// Optional tint color.
   final Color? color;
 
+  /// Appearance used by the native control.
+  final Brightness? brightness;
+
   /// Height of the control. Defaults to 32.
   final double height;
 
@@ -37,22 +40,31 @@ class LiquidGlassSegmentedControl extends StatefulWidget {
     required this.onValueChanged,
     this.enabled = true,
     this.color,
+    this.brightness,
     this.height = 32,
   }) : assert(labels.length > 0, 'At least one label is required.'),
-       assert(selectedIndex >= 0 && selectedIndex < labels.length, 'selectedIndex must be within [0, labels.length).');
+       assert(
+         selectedIndex >= 0 && selectedIndex < labels.length,
+         'selectedIndex must be within [0, labels.length).',
+       );
 
   @override
-  State<LiquidGlassSegmentedControl> createState() => _LiquidGlassSegmentedControlState();
+  State<LiquidGlassSegmentedControl> createState() =>
+      _LiquidGlassSegmentedControlState();
 }
 
-class _LiquidGlassSegmentedControlState extends State<LiquidGlassSegmentedControl> with LiquidGlassRouteSuppression {
+class _LiquidGlassSegmentedControlState
+    extends State<LiquidGlassSegmentedControl>
+    with LiquidGlassRouteSuppression {
   MethodChannel? _nativeChannel;
-  @override MethodChannel? get suppressionChannel => _nativeChannel;
+  @override
+  MethodChannel? get suppressionChannel => _nativeChannel;
 
   // Incremental prop tracking
   int? _lastSelectedIndex;
   bool? _lastEnabled;
   int? _lastColor;
+  String? _lastBrightness;
 
   @override
   void didUpdateWidget(covariant LiquidGlassSegmentedControl oldWidget) {
@@ -82,7 +94,10 @@ class _LiquidGlassSegmentedControlState extends State<LiquidGlassSegmentedContro
     if (ch == null) return;
 
     if (_lastSelectedIndex != widget.selectedIndex) {
-      await ch.invokeMethod('setSelectedIndex', {'index': widget.selectedIndex, 'animated': true});
+      await ch.invokeMethod('setSelectedIndex', {
+        'index': widget.selectedIndex,
+        'animated': true,
+      });
       _lastSelectedIndex = widget.selectedIndex;
     }
     if (_lastEnabled != widget.enabled) {
@@ -93,6 +108,11 @@ class _LiquidGlassSegmentedControlState extends State<LiquidGlassSegmentedContro
     if (_lastColor != color) {
       await ch.invokeMethod('setColor', {'color': color});
       _lastColor = color;
+    }
+    final brightness = widget.brightness?.name;
+    if (_lastBrightness != brightness) {
+      await ch.invokeMethod('setBrightness', {'brightness': brightness});
+      _lastBrightness = brightness;
     }
   }
 
@@ -107,12 +127,15 @@ class _LiquidGlassSegmentedControlState extends State<LiquidGlassSegmentedContro
 
   void _onPlatformViewCreated(int viewId) {
     _nativeChannel?.setMethodCallHandler(null);
-    final channel = MethodChannel('liquid-glass-segmented-control-view/$viewId');
+    final channel = MethodChannel(
+      'liquid-glass-segmented-control-view/$viewId',
+    );
     channel.setMethodCallHandler(_handleNativeMethodCall);
     _nativeChannel = channel;
     _lastSelectedIndex = widget.selectedIndex;
     _lastEnabled = widget.enabled;
     _lastColor = widget.color?.toARGB32();
+    _lastBrightness = widget.brightness?.name;
     syncGlassRouteVisibility();
   }
 
@@ -123,7 +146,13 @@ class _LiquidGlassSegmentedControlState extends State<LiquidGlassSegmentedContro
   }
 
   Map<String, Object?> _buildCreationParams() {
-    return <String, Object?>{..._buildSegmentParams(), 'selectedIndex': widget.selectedIndex, 'enabled': widget.enabled, 'color': widget.color?.toARGB32()};
+    return <String, Object?>{
+      ..._buildSegmentParams(),
+      'selectedIndex': widget.selectedIndex,
+      'enabled': widget.enabled,
+      'color': widget.color?.toARGB32(),
+      'brightness': widget.brightness?.name,
+    };
   }
 
   @override
@@ -136,7 +165,9 @@ class _LiquidGlassSegmentedControlState extends State<LiquidGlassSegmentedContro
           creationParams: _buildCreationParams(),
           creationParamsCodec: const StandardMessageCodec(),
           onPlatformViewCreated: _onPlatformViewCreated,
-          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{Factory<TapGestureRecognizer>(() => TapGestureRecognizer())},
+          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+            Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
+          },
         ),
       );
     }
