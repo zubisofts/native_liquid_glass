@@ -36,17 +36,19 @@ mixin LiquidGlassRouteSuppression<T extends StatefulWidget> on State<T> {
     syncGlassRouteVisibility();
   }
 
-  /// Checks [ModalRoute.of]`.isCurrent` and tells the native view to
-  /// hide or show accordingly. Call this from [onPlatformViewCreated]
-  /// as well so the initial state is correct.
+  /// Checks [ModalRoute.of]`.offstage` and tells the native view to
+  /// hide or show accordingly. Only opaque route pushes (full page navigation)
+  /// mark lower routes as offstage, keeping toolbar and action controls
+  /// visible during non-opaque overlays like bottom sheets.
   void syncGlassRouteVisibility() {
     final ch = suppressionChannel;
     if (ch == null) return;
 
-    final isCurrent = ModalRoute.of(context)?.isCurrent ?? true;
-    if (isCurrent != _glassRouteCurrent) {
-      _glassRouteCurrent = isCurrent;
-      ch.invokeMethod('setSuppressed', {'suppressed': !isCurrent});
+    final route = ModalRoute.of(context);
+    final isSuppressed = route?.offstage ?? false;
+    if (isSuppressed == _glassRouteCurrent) {
+      _glassRouteCurrent = !isSuppressed;
+      ch.invokeMethod('setSuppressed', {'suppressed': isSuppressed});
     }
   }
 }
